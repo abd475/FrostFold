@@ -27,7 +27,7 @@ jobs:
             -scheme FrostFold \
             -sdk iphoneos \
             -configuration Release \
-            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            IPHONEOS_DEPLOYMENT_TARGET=16.6 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             BUILD_DIR=build
