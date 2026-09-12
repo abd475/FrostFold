@@ -4,46 +4,50 @@
 //
 
 import CoreMotion
-import Observation
+import Combine
 import UIKit
 import simd
 
 /// Derives the device's tilt around the screen-space Y axis from Core Motion attitude,
 /// relative to a calibrated "zero tilt" pose.
-@Observable @MainActor
-final class FoldMotionModel {
+@MainActor
+final class FoldMotionModel: ObservableObject {
     /// Tilt fed to the shader, in radians. Positive means the right edge is farther from the viewer.
     var tiltAngle: Double {
         usesManualTilt ? manualDegrees * .pi / 180 : motionTilt
     }
 
-    var usesManualTilt: Bool
-    var manualDegrees: Double
-    private(set) var isMotionAvailable: Bool
+    @Published var usesManualTilt: Bool
+    @Published var manualDegrees: Double
+    @Published private(set) var isMotionAvailable: Bool
 
-    private(set) var motionTilt: Double = 0
+    @Published private(set) var motionTilt: Double = 0
 
-    @ObservationIgnored private let motionManager = CMMotionManager()
-    @ObservationIgnored private var reference: simd_double3x3?
+    private let motionManager = CMMotionManager()
+    private var reference: simd_double3x3?
     /// Whether `CMRotationMatrix` rows hold the device axes expressed in the reference frame.
     /// Resolved empirically against the gravity vector on the first informative sample.
-    @ObservationIgnored private var rowsAreDeviceAxes: Bool?
+    private var rowsAreDeviceAxes: Bool?
     /// Fraction of the remaining error closed per sample. Kept high: the attitude is already fused,
     /// and every extra frame of filtering is visible as lag between the hand and the screen.
-    @ObservationIgnored private let smoothing = 0.7
+    private let smoothing = 0.7
     /// How far ahead to extrapolate with the gyroscope, to cover sensor and display latency.
-    @ObservationIgnored private let predictionInterval = 0.04
+    private let predictionInterval = 0.04
 
     init() {
         // Launch-time override for simulator runs: `-tiltDegrees 20` or TILT_DEGREES=-20.
         let defaults = UserDefaults.standard
         let environment = ProcessInfo.processInfo.environment
-        manualDegrees = environment["TILT_DEGREES"].flatMap(Double.init) ?? defaults.double(forKey: "tiltDegrees")
-        isMotionAvailable = motionManager.isDeviceMotionAvailable
+        let fetchedManualDegrees = environment["TILT_DEGREES"].flatMap(Double.init) ?? defaults.double(forKey: "tiltDegrees")
+        let motionAvail = motionManager.isDeviceMotionAvailable
+        
+        self.manualDegrees = fetchedManualDegrees
+        self.isMotionAvailable = motionAvail
+        
         #if targetEnvironment(simulator)
-        usesManualTilt = true
+        self.usesManualTilt = true
         #else
-        usesManualTilt = defaults.bool(forKey: "manualTilt") || !motionManager.isDeviceMotionAvailable
+        self.usesManualTilt = defaults.bool(forKey: "manualTilt") || !motionAvail
         #endif
     }
 
