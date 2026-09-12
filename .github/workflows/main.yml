@@ -31,9 +31,19 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             BUILD_DIR=build
 
-      - name: Ad-hoc Sign Executable with ldid
+      - name: Generate Entitlements & Sign with ldid
         run: |
-          ldid -S build/Release-iphoneos/FrostFold.app/FrostFold
+          cat <<EOF > entitlements.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>get-task-allow</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          ldid -Sentitlements.plist build/Release-iphoneos/FrostFold.app/FrostFold
 
       - name: Package into IPA
         run: |
