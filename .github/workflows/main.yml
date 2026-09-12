@@ -1,0 +1,41 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build Application Payload
+        run: |
+          mkdir -p build
+          xcodebuild build \
+            -project FrostFold.xcodeproj \
+            -scheme FrostFold \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            BUILD_DIR=build
+
+      - name: Package into IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Release-iphoneos/FrostFold.app Payload/
+          zip -r FrostFold.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FrostFold-IPA
+          path: FrostFold.ipa
