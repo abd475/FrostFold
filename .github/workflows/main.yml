@@ -16,6 +16,9 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Install ldid
+        run: brew install ldid
+
       - name: Build Application Payload
         run: |
           mkdir -p build
@@ -27,6 +30,10 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             BUILD_DIR=build
+
+      - name: Ad-hoc Sign Executable with ldid
+        run: |
+          ldid -S build/Release-iphoneos/FrostFold.app/FrostFold
 
       - name: Package into IPA
         run: |
