@@ -27,10 +27,14 @@ jobs:
             -scheme FrostFold \
             -sdk iphoneos \
             -configuration Release \
-            IPHONEOS_DEPLOYMENT_TARGET=16.6 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             BUILD_DIR=build
+
+      - name: Lower MinimumOSVersion in Info.plist
+        run: |
+          PLIST="build/Release-iphoneos/FrostFold.app/Info.plist"
+          plutil -replace MinimumOSVersion -string "16.0" "$PLIST"
 
       - name: Generate Entitlements & Sign with ldid
         run: |
