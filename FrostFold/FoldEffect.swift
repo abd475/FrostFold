@@ -32,19 +32,39 @@ private struct FoldEffectModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .compositingGroup()
-            .visualEffect { [angle, parameters] content, _ in
-                content.layerEffect(
-                    ShaderLibrary.frostFold(
-                        .boundingRect,
-                        .float(angle),
-                        .float(parameters.eyeDistancePoints),
-                        .float(parameters.blurSpread),
-                        .float(parameters.darkening),
-                        .float(parameters.baseSeparationPoints)
-                    ),
-                    maxSampleOffset: .zero,
-                    isEnabled: abs(angle) > 1e-4
+            .modifier(FoldShaderBridge(angle: angle, parameters: parameters))
+    }
+}
+
+private struct FoldShaderBridge: ViewModifier {
+    let angle: Double
+    let parameters: FoldParameters
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content
+                .visualEffect { [angle, parameters] content, _ in
+                    content.layerEffect(
+                        ShaderLibrary.frostFold(
+                            .boundingRect,
+                            .float(angle),
+                            .float(parameters.eyeDistancePoints),
+                            .float(parameters.blurSpread),
+                            .float(parameters.darkening),
+                            .float(parameters.baseSeparationPoints)
+                        ),
+                        maxSampleOffset: .zero,
+                        isEnabled: abs(angle) > 1e-4
+                    )
+                }
+        } else {
+            // iOS 16 native fallback effect
+            content
+                .rotation3DEffect(
+                    .degrees(angle * 180 / .pi),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.5
                 )
-            }
+        }
     }
 }
